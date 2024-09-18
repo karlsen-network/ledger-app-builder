@@ -1,3 +1,5 @@
+# Dockerfile for the legacy version
+
 FROM ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite:latest AS LITE_BUILDER
 
 FROM ubuntu:22.04

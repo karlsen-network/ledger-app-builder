@@ -2,14 +2,11 @@
 
 These container images contain all dependencies to compile an application for Ledger devices
 
-The four images are stored in the following directories:
+The image is stored in the following directory:
 
-- `lite` is based on `Alpine` and is the lightest of the app-builder docker images. It contains the sufficient tools to build and load applications in the `C` language. It does **not** contain the `glibc`, so tools/analyzers using it won't work.
-- `full` is the default image. It derives from `lite` and contains tools allowing `Rust` compilation.
-- `dev-tools` is based on the `full` image and contains more tools for testing : the [Ragger](https://github.com/LedgerHQ/ragger) test framework and the [Speculos](https://github.com/LedgerHQ/speculos) emulator. Mostly useful for macOS and Windows users who want to quickly setup a more complete development environment.
 - `legacy` contains all needed tools to compile `C` and `Rust` applications. This image is quite heavy, but based on Ubuntu 22.04, so it is a good pick for tools using the `glibc`, such as `SonarQube` or `CodeQL`.
 
-## Using Ledger images
+## Using Ledger image
 
 To use or build these container images, first install Docker on you computer.
 
@@ -17,14 +14,8 @@ The images corresponding to the previous Dockerfiles are built and pushed on [gh
 They can be pulled via these commands:
 
 ```bash
-# pull the default, full image, built from `full/Dockerfile`
-$ docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
-# pull the lite image, built from `lite/Dockerfile`
-$ docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite:latest
-# pull the dev-tools image, built from `dev-tools/Dockerfile`
-$ docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
 # pull the legacy image, built from `legacy/Dockerfile`
-$ docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-legacy:latest
+$ docker pull ghcr.io/karlsen-network/ledger-app-builder/ledger-app-builder-legacy:latest
 ```
 
 ## Compile your app in the container
@@ -35,32 +26,20 @@ In the source folder of your application, you can compile with the following com
 
 * For Nano S
 ```bash
-$ sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+$ sudo docker run --rm -ti -v "$(realpath .):/app" --user root ghcr.io/karlsen-network/ledger-app-builder/ledger-app-builder-legacy:latest
 bash$ BOLOS_SDK=$NANOS_SDK make
-```
-
-* For Nano X
-```bash
-$ sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
-bash$ BOLOS_SDK=$NANOX_SDK make
 ```
 
 * For Nano S+
 ```bash
-$ sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+$ sudo docker run --rm -ti -v "$(realpath .):/app" --user root ghcr.io/karlsen-network/ledger-app-builder/ledger-app-builder-legacy:latest
 bash$ BOLOS_SDK=$NANOSP_SDK make
 ```
 
 * For Stax
 ```bash
-$ sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+$ sudo docker run --rm -ti -v "$(realpath .):/app" --user root ghcr.io/karlsen-network/ledger-app-builder/ledger-app-builder-legacy:latest
 bash$ BOLOS_SDK=$STAX_SDK make
-```
-
-* For Flex
-```bash
-$ sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
-bash$ BOLOS_SDK=$FLEX_SDK make
 ```
 
 ### Code static analysis
@@ -68,67 +47,19 @@ bash$ BOLOS_SDK=$FLEX_SDK make
 The Docker images include the [Clang Static Analyzer](https://clang-analyzer.llvm.org/), which can be invoked with:
 
 ```bash
-$ sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+$ sudo docker run --rm -ti -v "$(realpath .):/app" --user root ghcr.io/karlsen-network/ledger-app-builder/ledger-app-builder-legacy:latest
 bash$ BOLOS_SDK=$NANOS_SDK make scan-build
-```
-
-## App testing
-
-With the `ledger-app-dev-tools` image, whether you are developing on macOS, Windows or Linux, you can quickly test your app with the [Speculos](https://github.com/LedgerHQ/speculos) emulator or the [Ragger](https://github.com/LedgerHQ/ragger) test framework.
-For examples of functional tests implemented with Ragger, you can have a look at the [app-boilerplate](https://github.com/LedgerHQ/app-boilerplate)
-
-First, run the `ledger-app-dev-tools` docker image. Depending on your platform, the command will change slightly :
-
-**Linux (Ubuntu)**
-
-```bash
-sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY=$DISPLAY ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
-```
-
-**Windows (with PowerShell)**
-
-Assuming you already have a running X server like [VcXsrv](https://sourceforge.net/projects/vcxsrv/) configured to accept client connections.
-
-```bash
-docker run --rm -ti -v "$(Get-Location):/app" -e DISPLAY="host.docker.internal:0" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
-```
-
-**macOS**
-
-Assuming you already have a running X server like [XQuartz](https://www.xquartz.org/) configured to accept client connections.
-
-```bash
-sudo docker run --rm -ti -v "$(pwd -P):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY="host.docker.internal:0" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
-```
-
-Then you can test your app either with the Speculos emulator :
-
-```bash
-# Run your app on Speculos
-bash$ speculos build/nanos/bin/app.elf --model nanos
-```
-
-Or you can run your Ragger functional tests if you have implemented them :
-
-```bash
-# Creating a virtualenv so that the non-root user can install Python dependencies
-bash$ python -m virtualenv venv --system-site-package
-bash$ source ./venv/bin/activate
-# Install tests dependencies
-(venv) bash$ pip install -r tests/requirements.txt
-# Run ragger functional tests
-(venv) bash$ python -m pytest tests/ --tb=short -v --device nanos --display
 ```
 
 ## Load the app on a physical device
 
-:warning: Only Nano S, Nano S+, Stax and Flex devices allow application side-loading. This section will not work with a Nano X.
+:warning: Only Nano S, Nano S+ and Stax devices allow application side-loading. This section will not work with a Nano X.
 
 To load the app from the container, you will need additional docker arguments in order to allow Docker to access your USB port.
 Your physical device must be connected, unlocked and the screen showing the dashboard (not inside an application). Same as for compilation, `BOLOS_SDK` variable is used to specify the target device. Use the following docker command to load the app (here for Nano S device) :
 
 ```bash
-$ sudo docker run --rm -ti  -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+$ sudo docker run --rm -ti  -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" --user root ghcr.io/karlsen-network/ledger-app-builder/ledger-app-builder-legacy:latest
 bash$ BOLOS_SDK=$NANOS_SDK make load
 ```
 
@@ -142,7 +73,7 @@ If the provided images does not suit your needs or you want to tinker with them,
 Containers can be built using `Docker`:
 
 ```bash
-$ (cd full && sudo docker build -t ledger-app-builder:latest .)
+$ (cd full && sudo docker build -t ledger-app-builder-legacy:latest .)
 ```
 
 ### App Scanner
@@ -156,3 +87,4 @@ Then, build container from the `coverity/` directory with:
 ```bash
 $ (cd full && sudo docker build -t ledger-app-scanner:latest .)
 ```
+
